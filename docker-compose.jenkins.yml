@@ -1,0 +1,6 @@
+# CI : utilise les variables CI_MOVIE_IMAGE et CI_CAST_IMAGE (voir Jenkinsfile).
+services:
+  movie_service:
+    image: ${CI_MOVIE_IMAGE}
+  cast_service:
+    image: ${CI_CAST_IMAGE}

@@ -1,8 +1,7 @@
 pipeline {
   environment {
     DOCKER_ID = "edouardaugustinribes"
-    DOCKER_IMAGE_MOVIE = "movie-service"
-    DOCKER_IMAGE_CAST = "cast-service"
+    DOCKER_REPOSITORY = "examdevopsjenkins"
     DOCKER_TAG = "v.${BUILD_ID}.0"
   }
   agent any
@@ -12,8 +11,8 @@ pipeline {
         script {
           sh '''
             docker compose -f docker-compose.yml down --remove-orphans 2>/dev/null || true
-            docker build -t ${DOCKER_ID}/${DOCKER_IMAGE_MOVIE}:${DOCKER_TAG} ./movie-service
-            docker build -t ${DOCKER_ID}/${DOCKER_IMAGE_CAST}:${DOCKER_TAG} ./cast-service
+            docker build -t ${DOCKER_ID}/${DOCKER_REPOSITORY}:movie-${DOCKER_TAG} ./movie-service
+            docker build -t ${DOCKER_ID}/${DOCKER_REPOSITORY}:cast-${DOCKER_TAG} ./cast-service
             sleep 2
           '''
         }
@@ -25,6 +24,9 @@ pipeline {
           sh '''
             export DOCKER_ID="${DOCKER_ID}"
             export DOCKER_TAG="${DOCKER_TAG}"
+            export DOCKER_REPOSITORY="${DOCKER_REPOSITORY}"
+            export CI_MOVIE_IMAGE="${DOCKER_ID}/${DOCKER_REPOSITORY}:movie-${DOCKER_TAG}"
+            export CI_CAST_IMAGE="${DOCKER_ID}/${DOCKER_REPOSITORY}:cast-${DOCKER_TAG}"
             docker compose -f docker-compose.yml -f docker-compose.jenkins.yml down --remove-orphans -v 2>/dev/null || true
             docker compose -f docker-compose.yml -f docker-compose.jenkins.yml up -d --no-build
             sleep 20
@@ -50,8 +52,8 @@ pipeline {
         script {
           sh '''
             echo "${DOCKER_PASS}" | docker login -u "${DOCKER_ID}" --password-stdin
-            docker push ${DOCKER_ID}/${DOCKER_IMAGE_MOVIE}:${DOCKER_TAG}
-            docker push ${DOCKER_ID}/${DOCKER_IMAGE_CAST}:${DOCKER_TAG}
+            docker push ${DOCKER_ID}/${DOCKER_REPOSITORY}:movie-${DOCKER_TAG}
+            docker push ${DOCKER_ID}/${DOCKER_REPOSITORY}:cast-${DOCKER_TAG}
           '''
         }
       }
@@ -86,8 +88,8 @@ pipeline {
             helm upgrade --install fastapi-dev charts \
               -f charts/values.yaml \
               -f charts/values-dev.yaml \
-              --set image.repository="${DOCKER_ID}/${DOCKER_IMAGE_MOVIE}" \
-              --set image.tag="${DOCKER_TAG}" \
+              --set image.repository="${DOCKER_ID}/${DOCKER_REPOSITORY}" \
+              --set image.tag="movie-${DOCKER_TAG}" \
               --namespace dev
           '''
         }
@@ -107,8 +109,8 @@ pipeline {
             helm upgrade --install fastapi-qa charts \
               -f charts/values.yaml \
               -f charts/values-qa.yaml \
-              --set image.repository="${DOCKER_ID}/${DOCKER_IMAGE_MOVIE}" \
-              --set image.tag="${DOCKER_TAG}" \
+              --set image.repository="${DOCKER_ID}/${DOCKER_REPOSITORY}" \
+              --set image.tag="movie-${DOCKER_TAG}" \
               --namespace qa
           '''
         }
@@ -128,8 +130,8 @@ pipeline {
             helm upgrade --install fastapi-staging charts \
               -f charts/values.yaml \
               -f charts/values-staging.yaml \
-              --set image.repository="${DOCKER_ID}/${DOCKER_IMAGE_MOVIE}" \
-              --set image.tag="${DOCKER_TAG}" \
+              --set image.repository="${DOCKER_ID}/${DOCKER_REPOSITORY}" \
+              --set image.tag="movie-${DOCKER_TAG}" \
               --namespace staging
           '''
         }
@@ -161,8 +163,8 @@ pipeline {
             helm upgrade --install fastapi-prod charts \
               -f charts/values.yaml \
               -f charts/values-prod.yaml \
-              --set image.repository="${DOCKER_ID}/${DOCKER_IMAGE_MOVIE}" \
-              --set image.tag="${DOCKER_TAG}" \
+              --set image.repository="${DOCKER_ID}/${DOCKER_REPOSITORY}" \
+              --set image.tag="movie-${DOCKER_TAG}" \
               --namespace prod
           '''
         }

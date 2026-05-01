@@ -14,7 +14,7 @@ Quatre environnements sont modélisés par des **Namespaces** : `dev`, `qa`, `st
 
 ### Installer / accéder au cluster
 
-- **k3s** (Linux) : `curl -sfL https://get.k3s.io | sh -` puis, pour utiliser `kubectl` en utilisateur non root, copier le kubeconfig : `sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config && sudo chown "$USER:$USER" ~/.kube/config` (ou ajouter l’utilisateur au groupe configuré par k3s).
+- **k3s** (Linux) : `curl -sfL https://get.k3s.io | sh -` puis, pour utiliser `kubectl` en utilisateur non root, copier le kubeconfig : `sudo cp /etc/rancher/k3s/k3s.yaml ~/.kube/config && sudo chown "$USER:$USER" ~/.kube/config` (ou ajouter l'utilisateur au groupe configuré par k3s).
 - **Minikube** : `minikube start`
 - **kind** : `kind create cluster`
 
@@ -42,13 +42,15 @@ Prérequis image : adapter `values.yaml` / secrets (`regcred`) selon votre regis
 
 ## Jenkins (`Jenkinsfile`)
 
-Pipeline déclarative sur le modèle *datascientest-jenkins* : build des images `movie-service` et `cast-service`, tests via Docker Compose (`docker-compose.jenkins.yml`), push Docker Hub, application des namespaces, déploiements Helm vers **dev → qa → staging → prod**. Le déploiement **prod** est **manuel** (`input`) et **n’est proposé que sur la branche `master`** (les autres branches sautent ce stage).
+Pipeline déclarative sur le modèle *datascientest-jenkins* : build des images, tests via Docker Compose (`docker-compose.jenkins.yml`), **push Docker Hub** sur [`edouardaugustinribes/examdevopsjenkins`](https://hub.docker.com/r/edouardaugustinribes/examdevopsjenkins) (tags **`movie-<version>`** et **`cast-<version>`** ; Helm utilise l’image **movie**), application des namespaces, déploiements Helm **dev → qa → staging → prod**. **Prod** : `input` manuel et **branche `master` uniquement**.
 
-### Mettre en œuvre l’automatisation complète avec Jenkins
+### Mettre en œuvre l'automatisation complète avec Jenkins
 
-1. **Installer Jenkins** sur une machine Linux (paquets officiels ou image Docker « jenkins/jenkins »). Plugins utiles : **Pipeline**, **Git**, **Credentials Binding**, **Email Extension** (si vous utilisez le mail d’échec dans le `Jenkinsfile`).
+*(Jenkins est déjà installé en local : il reste plugins, outils sur l'agent, credentials et création du job.)*
 
-2. **Sur l’agent qui exécute le pipeline** (`agent any`) : **Docker** + `docker compose`, **kubectl**, **Helm**, **curl**. L’utilisateur qui lance les builds doit pouvoir parler au démon Docker (groupe `docker` ou socket monté si Jenkins est en conteneur).
+1. **Plugins** (*Manage Jenkins → Plugins*, si besoin) : **Pipeline**, **Git**, **Credentials Binding**, **Email Extension** (pour le mail d'échec dans le `Jenkinsfile`).
+
+2. **Sur l'agent qui exécute le pipeline** (`agent any`) : **Docker** + `docker compose`, **kubectl**, **Helm**, **curl**. L'utilisateur qui lance les builds doit pouvoir parler au démon Docker (groupe `docker` ou socket monté si Jenkins est en conteneur).
 
 3. **Credentials Jenkins** (*Manage Jenkins → Credentials*) — les **IDs sont imposés par le `Jenkinsfile`** :
    - **`DOCKER_HUB_PASS`** (*Secret text*) : token ou mot de passe Docker Hub.
@@ -56,12 +58,12 @@ Pipeline déclarative sur le modèle *datascientest-jenkins* : build des images 
 
 4. **Créer le job** : *New Item* → **Pipeline** → *Pipeline script from SCM* → Git : URL du dépôt, branche (ex. `*/master`), **Script Path** : `Jenkinsfile` → sauver → **Build Now**.
 
-5. **Adapter le `Jenkinsfile`** : **`DOCKER_ID`** = votre utilisateur Docker Hub ; **`post { failure { mail ... } }`** : email et SMTP Jenkins si besoin.
+5. **Adapter le `Jenkinsfile`** : **`DOCKER_ID`** / **`DOCKER_REPOSITORY`** (`examdevopsjenkins`) si votre dépôt Hub change ; **`post { failure { mail ... } }`** + SMTP Jenkins si besoin.
 
-6. **Kubernetes** : si les pulls d’images sont privés, créer **`regcred`** dans chaque namespace (`kubectl create secret docker-registry regcred ...`), comme attendu par `charts/values.yaml`.
+6. **Kubernetes** : si les pulls d'images sont privés, créer **`regcred`** dans chaque namespace (`kubectl create secret docker-registry regcred ...`), comme attendu par `charts/values.yaml`.
 
 7. **Webhook (optionnel)** : GitHub/GitLab → webhook vers Jenkins pour lancer un build à chaque push.
 
 8. **Port 8080** : les tests utilisent `localhost:8080` (nginx Compose). Si Jenkins utilise aussi le port **8080** sur la même machine, changez le port de Jenkins ou celui de nginx dans Compose pour éviter le conflit.
 
-Configurer les identifiants **`DOCKER_HUB_PASS`** et **`config`**, puis vérifier **`DOCKER_ID`** dans le `Jenkinsfile`.
+Configurer **`DOCKER_HUB_PASS`** et **`config`**. Compte **`edouardaugustinribes`** et dépôt **`examdevopsjenkins`** sont déjà renseignés dans le `Jenkinsfile`.
