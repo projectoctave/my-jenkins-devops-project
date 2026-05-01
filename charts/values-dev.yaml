@@ -1,0 +1,8 @@
+# Déploiement dans le namespace dev (NodePort unique au niveau du cluster).
+replicaCount: 1
+
+service:
+  type: NodePort
+  port: 80
+  nodePort: 30007
+  targetPort: 8000

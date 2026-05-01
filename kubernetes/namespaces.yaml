@@ -1,0 +1,35 @@
+# Quatre environnements de déploiement via Namespaces Kubernetes :
+# dev, qa, staging, prod.
+#
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: dev
+  labels:
+    environment: dev
+    app.kubernetes.io/part-of: movie-microservices
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: qa
+  labels:
+    environment: qa
+    app.kubernetes.io/part-of: movie-microservices
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: staging
+  labels:
+    environment: staging
+    app.kubernetes.io/part-of: movie-microservices
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: prod
+  labels:
+    environment: prod
+    app.kubernetes.io/part-of: movie-microservices

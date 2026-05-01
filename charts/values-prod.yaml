@@ -1,0 +1,7 @@
+replicaCount: 3
+
+service:
+  type: NodePort
+  port: 80
+  nodePort: 30010
+  targetPort: 8000
