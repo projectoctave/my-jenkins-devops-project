@@ -29,8 +29,7 @@ pipeline {
             export CI_MOVIE_IMAGE="${DOCKER_ID}/${DOCKER_REPOSITORY}:movie-${DOCKER_TAG}"
             export CI_CAST_IMAGE="${DOCKER_ID}/${DOCKER_REPOSITORY}:cast-${DOCKER_TAG}"
             docker compose -f docker-compose.yml -f docker-compose.jenkins.yml down --remove-orphans -v 2>/dev/null || true
-            docker compose -f docker-compose.yml -f docker-compose.jenkins.yml up -d --no-build
-            sleep 20
+            docker compose -f docker-compose.yml -f docker-compose.jenkins.yml up -d --no-build --wait --wait-timeout 180
           '''
         }
       }
@@ -39,8 +38,23 @@ pipeline {
       steps {
         script {
           sh '''
-            curl -fsS "http://localhost:${PUBLIC_NGINX_PORT}/api/v1/movies/" >/dev/null
-            curl -fsS "http://localhost:${PUBLIC_NGINX_PORT}/api/v1/casts/docs" >/dev/null
+            set +e
+            ok=1
+            i=1
+            while [ "$i" -le 35 ]; do
+              if curl -fsS "http://127.0.0.1:${PUBLIC_NGINX_PORT}/api/v1/movies/" >/dev/null 2>&1 \
+                && curl -fsS "http://127.0.0.1:${PUBLIC_NGINX_PORT}/api/v1/casts/docs" >/dev/null 2>&1; then
+                ok=0
+                break
+              fi
+              sleep 3
+              i=$((i+1))
+            done
+            if [ "$ok" -ne 0 ]; then
+              echo "Acceptance checks failed — last curl attempts above. Recent logs:"
+              docker compose -f docker-compose.yml -f docker-compose.jenkins.yml logs --tail=60 nginx movie_service cast_service || true
+            fi
+            exit "$ok"
           '''
         }
       }
