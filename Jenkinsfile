@@ -3,6 +3,7 @@ pipeline {
     DOCKER_ID = "edouardaugustinribes"
     DOCKER_REPOSITORY = "examdevopsjenkins"
     DOCKER_TAG = "v.${BUILD_ID}.0"
+    PUBLIC_NGINX_PORT = "9080"
   }
   agent any
   stages {
@@ -38,8 +39,8 @@ pipeline {
       steps {
         script {
           sh '''
-            curl -fsS http://localhost:8080/api/v1/movies/ >/dev/null
-            curl -fsS http://localhost:8080/api/v1/casts/docs >/dev/null
+            curl -fsS "http://localhost:${PUBLIC_NGINX_PORT}/api/v1/movies/" >/dev/null
+            curl -fsS "http://localhost:${PUBLIC_NGINX_PORT}/api/v1/casts/docs" >/dev/null
           '''
         }
       }

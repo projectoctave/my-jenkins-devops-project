@@ -1,4 +1,5 @@
-# CI : utilise les variables CI_MOVIE_IMAGE et CI_CAST_IMAGE (voir Jenkinsfile).
+# CI : uniquement substitution d'images (CI_MOVIE_IMAGE / CI_CAST_IMAGE).
+# Les services ne publient aucun port hôte sauf nginx (voir docker-compose.yml + PUBLIC_NGINX_PORT dans le Jenkinsfile).
 services:
   movie_service:
     image: ${CI_MOVIE_IMAGE}

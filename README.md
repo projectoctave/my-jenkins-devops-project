@@ -64,6 +64,6 @@ Pipeline déclarative sur le modèle *datascientest-jenkins* : build des images,
 
 7. **Webhook (optionnel)** : GitHub/GitLab → webhook vers Jenkins pour lancer un build à chaque push.
 
-8. **Port 8080** : les tests utilisent `localhost:8080` (nginx Compose). Si Jenkins utilise aussi le port **8080** sur la même machine, changez le port de Jenkins ou celui de nginx dans Compose pour éviter le conflit.
+8. **Port nginx en CI** : le `Jenkinsfile` définit `PUBLIC_NGINX_PORT=9080` pour éviter tout conflit avec Jenkins sur **8080**. Les services API ne sont plus publiés en **8001/8002** sur l'hôte ; en local sans variable, Compose utilise **`http://localhost:8080`** comme avant (`PUBLIC_NGINX_PORT` facultatif pour surcharger ce port).
 
 Configurer **`DOCKER_HUB_PASS`** et **`config`**. Compte **`edouardaugustinribes`** et dépôt **`examdevopsjenkins`** sont déjà renseignés dans le `Jenkinsfile`.
